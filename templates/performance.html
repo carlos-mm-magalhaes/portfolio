@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+{% from "_components.html" import kpi_card, card, balance_table with context %}
+
+{% block title %}Portfolio Performance{% endblock %}
+{% block page_title %}{{ scope_label }}{% endblock %}
+{% block page_subtitle %}{{ reports[currencies[0]]["start_date"] }} <span class="text-slate-300 mx-1">&rarr;</span> {{ reports[currencies[0]]["end_date"] }}{% endblock %}
+
+{% block content %}
+<!-- Filter Control Bar -->
+<form method="get" id="performance-filters" class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex flex-wrap items-end gap-4">
+    <div class="flex-1 min-w-[200px]">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Scope</label>
+        <select name="scope" onchange="this.form.submit()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 focus:bg-white transition cursor-pointer">
+            <option value="portfolio" {{ "selected" if scope == "portfolio" else "" }}>Portfolio (All)</option>
+            {% for account in scopes %}
+            <option value="account:{{ account.id }}" {{ "selected" if scope == "account:" ~ account.id else "" }}>{{ account.name }}</option>
+            {% for asset in account.assets %}
+            <option value="asset:{{ account.id }}:{{ asset.id }}" {{ "selected" if scope == "asset:" ~ account.id ~ ":" ~ asset.id else "" }}>&nbsp;&nbsp;↳ {{ account.name }} &rsaquo; {{ asset.symbol }}</option>
+            {% endfor %}
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="w-26">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Period</label>
+        <select id="period-select" name="period" onchange="this.form.submit()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 focus:bg-white transition cursor-pointer">
+            {% for label, display_name in periods %}
+            <option value="{{ label }}" {{ "selected" if period == label else "" }}>{{ display_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="w-30">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Start</label>
+        <input type="date" name="start" value="{{ period_start }}" max="{{ period_end }}"
+               onchange="document.getElementById('period-select').value='custom'"
+               onblur="this.form.submit()"
+               class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 focus:bg-white transition cursor-pointer">
+    </div>
+
+    <div class="w-30">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">End</label>
+        <input type="date" name="end" value="{{ period_end }}"
+               onchange="document.getElementById('period-select').value='custom'"
+               onblur="this.form.submit()"
+               class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 focus:bg-white transition cursor-pointer">
+    </div>
+
+    <div class="relative w-50">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Benchmarks</label>
+        <details class="group bg-slate-50 border border-slate-200 rounded-lg">
+            <summary class="list-none flex items-center justify-between px-3 py-1.5 text-xs font-medium text-slate-700 cursor-pointer select-none">
+                <span>{{ selected_benchmarks|length }} selected</span>
+                <span class="text-slate-400 text-[10px] group-open:rotate-180 transition-transform">▼</span>
+            </summary>
+            <div class="absolute z-20 left-0 mt-1.5 w-60 bg-white border border-slate-200 rounded-xl shadow-xl p-3 space-y-2">
+                <div class="max-h-48 overflow-y-auto space-y-1.5 pr-1 text-xs">
+                    {% for b in available_benchmarks %}
+                    <label class="flex items-center gap-2 text-slate-700 hover:text-slate-900 cursor-pointer select-none">
+                        <input type="checkbox" name="benchmark" value="{{ b.key }}"
+                               class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/20"
+                               {{ "checked" if b.key in selected_benchmarks else "" }}>
+                        <span>{{ b.label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="w-full mt-2 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800 transition">Apply</button>
+            </div>
+        </details>
+    </div>
+</form>
+
+<!-- KPI Metric Cards -->
+<section class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+    {% for c in currencies %}
+    {% set report = reports[c] %}
+    {{ kpi_card(
+        label="Ending Value (" ~ c ~ ")",
+        value="{:,.2f}".format(report["end_value"]),
+        caption="As of " ~ report["end_date"]
+    ) }}
+    {% endfor %}
+</section>
+
+{% call card("Returns vs Benchmarks (" ~ currency ~ ")", "Comparative performance across time-weighted and money-weighted calculations") %}
+<div class="overflow-x-auto">
+    <table class="min-w-full text-xs text-right tabular-nums divide-y divide-slate-100">
+        <thead>
+            <tr class="text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+                <th class="text-left py-3 pr-4 font-semibold">Entity</th>
+                <th class="px-3 py-3 font-semibold" title="Time-weighted, over the window">TWR (Period)</th>
+                <th class="px-3 py-3 font-semibold" title="Time-weighted, annualized">TWR (Ann)</th>
+                <th class="px-3 py-3 font-semibold" title="Money-weighted, over the window">XIRR (Period)</th>
+                <th class="pl-3 py-3 font-semibold" title="Money-weighted, annualized">XIRR (Ann)</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+            {% for row in metrics_rows %}
+            <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="text-left py-3 pr-4 font-semibold text-slate-800">{{ row["label"] }}</td>
+                <td class="px-3 py-3 {{ 'text-emerald-600 font-semibold' if row['twr_per'] and row['twr_per'] >= 0 else ('text-rose-600 font-semibold' if row['twr_per'] else 'text-slate-400') }}">
+                    {{ "{:+.2f}%".format(row["twr_per"]) if row["twr_per"] is not none else "—" }}
+                </td>
+                <td class="px-3 py-3 {{ 'text-emerald-600 font-semibold' if row['twr_ann'] and row['twr_ann'] >= 0 else ('text-rose-600 font-semibold' if row['twr_ann'] else 'text-slate-400') }}">
+                    {{ "{:+.2f}%".format(row["twr_ann"]) if row["twr_ann"] is not none else "—" }}
+                </td>
+                <td class="px-3 py-3 {{ 'text-emerald-600 font-semibold' if row['xirr_per'] and row['xirr_per'] >= 0 else ('text-rose-600 font-semibold' if row['xirr_per'] else 'text-slate-400') }}">
+                    {{ "{:+.2f}%".format(row["xirr_per"]) if row["xirr_per"] is not none else "—" }}
+                </td>
+                <td class="pl-3 py-3 {{ 'text-emerald-600 font-semibold' if row['xirr_ann'] and row['xirr_ann'] >= 0 else ('text-rose-600 font-semibold' if row['xirr_ann'] else 'text-slate-400') }}">
+                    {{ "{:+.2f}%".format(row["xirr_ann"]) if row["xirr_ann"] is not none else "—" }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endcall %}
+
+{% call card("% Growth Comparison (" ~ currency ~ ")", "Rebased to 0% at period start for normalized comparative analysis") %}
+<div class="relative h-80 w-full">
+    <canvas id="growthChart"></canvas>
+</div>
+{% endcall %}
+
+<!-- Portfolio Evolution Chart (needs a header-right P/L indicator - not a fit for the plain card() macro) -->
+<section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 md:p-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+        <div>
+            <h2 class="text-lg font-bold text-slate-900">Portfolio Evolution ({{ currency }})</h2>
+            <p class="text-xs text-slate-500">Total portfolio value vs total net capital invested</p>
+        </div>
+        {% if total_gain is not none %}
+        <div class="text-right">
+            <span class="text-xs text-slate-400">Total P/L:</span>
+            <span class="ml-1 text-sm font-bold tabular-nums {{ 'text-emerald-600' if total_gain >= 0 else 'text-rose-600' }}">
+                {{ "{:+,.2f}".format(total_gain) }} {{ currency }}
+            </span>
+        </div>
+        {% endif %}
+    </div>
+    <div class="relative h-80 w-full">
+        <canvas id="evolutionChart"></canvas>
+    </div>
+</section>
+
+<!-- Period Free Cash Flow Chart (needs a header-right legend - not a fit for the plain card() macro) -->
+<section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 md:p-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+            <h2 class="text-lg font-bold text-slate-900">Period Free Cash Flow ({{ currency }})</h2>
+            <p class="text-xs text-slate-500">Monthly net flows with period boundary values</p>
+        </div>
+        <div class="flex items-center gap-4 text-xs font-medium text-slate-500">
+            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-rose-500"></span> Deposits (-)</span>
+            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-emerald-500"></span> Withdrawals (+)</span>
+            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-indigo-500"></span> Boundary Value</span>
+        </div>
+    </div>
+    <div class="relative h-80 w-full">
+        <canvas id="cashFlowChart"></canvas>
+    </div>
+</section>
+
+{% call card("Cash Flow Summary", "Consolidated deposits, withdrawals, and capital change") %}
+<div class="overflow-x-auto">
+    <table class="min-w-full text-xs text-right tabular-nums divide-y divide-slate-100">
+        <thead>
+            <tr class="text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+                <th class="text-left py-3 pr-4 font-semibold">Currency</th>
+                <th class="px-3 py-3 font-semibold">Deposits</th>
+                <th class="px-3 py-3 font-semibold">Withdrawals</th>
+                <th class="px-3 py-3 font-semibold">Net Flow</th>
+                <th class="px-3 py-3 font-semibold">Start Value</th>
+                <th class="px-3 py-3 font-semibold">End Value</th>
+                <th class="pl-3 py-3 font-semibold">Total Delta</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+            {% for c in currencies %}
+            <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="text-left py-3 pr-4 font-bold text-slate-900">{{ c }}</td>
+                <td class="px-3 py-3 text-slate-600">{{ "{:,.2f}".format(cash_flow_summary[c]["deposits"]) }}</td>
+                <td class="px-3 py-3 text-slate-600">{{ "{:,.2f}".format(cash_flow_summary[c]["withdrawals"]) }}</td>
+                <td class="px-3 py-3 font-semibold {{ 'text-emerald-600' if cash_flow_summary[c]['net'] >= 0 else 'text-rose-600' }}">
+                    {{ "{:+,.2f}".format(cash_flow_summary[c]["net"]) }}
+                </td>
+                <td class="px-3 py-3 text-slate-600">{{ "{:,.2f}".format(cash_flow_summary[c]["start_value"]) }}</td>
+                <td class="px-3 py-3 text-slate-600">{{ "{:,.2f}".format(cash_flow_summary[c]["end_value"]) }}</td>
+                <td class="pl-3 py-3 font-semibold {{ 'text-emerald-600' if cash_flow_summary[c]['net_overall'] >= 0 else 'text-rose-600' }}">
+                    {{ "{:+,.2f}".format(cash_flow_summary[c]["net_overall"]) }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endcall %}
+
+<!-- Balance Tables at Period Boundaries -->
+{% if balances_start["accounts"] %}
+{{ balance_table("Asset Balances on " ~ reports[currencies[0]]["start_date"], balances_start) }}
+{% endif %}
+
+{% if balances_end["accounts"] %}
+{{ balance_table("Asset Balances on " ~ reports[currencies[0]]["end_date"], balances_end) }}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Shared Chart.js styling options
+    const defaultTooltip = window.AppTheme.tooltipDefaults;
+    const gridConfig = window.AppTheme.gridConfig;
+
+    // 1. Cash Flow Bar Chart
+    const chartData = {{ chart_data | tojson }};
+    new Chart(document.getElementById("cashFlowChart"), {
+        type: "bar",
+        data: {
+            labels: chartData.labels,
+            datasets: [{
+                data: chartData.values,
+                borderRadius: 4,
+                backgroundColor: chartData.meta.map(m => {
+                    if (!m) return "transparent";
+                    if (m.kind === "boundary") return "#6366f1"; // Indigo
+                    return m.amount >= 0 ? "#10b981" : "#f43f5e"; // Emerald / Rose
+                }),
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            scales: {
+                x: { grid: { display: false } },
+                y: { grid: gridConfig }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    ...defaultTooltip,
+                    callbacks: {
+                        label: (ctx) => {
+                            const meta = chartData.meta[ctx.dataIndex];
+                            if (!meta) return [];
+                            const lines = [`Amount: ${meta.amount.toLocaleString()}`, ...meta.descriptions];
+                            if (meta.capped) lines.push("(bar height capped for display)");
+                            return lines;
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    // 2. Portfolio Evolution Line Chart
+    const evolutionChart = {{ evolution_chart | tojson }};
+    new Chart(document.getElementById("evolutionChart"), {
+        type: "line",
+        data: {
+            datasets: [
+                {
+                    label: "Portfolio Value",
+                    data: evolutionChart.value.map(p => ({ x: p.date, y: p.value })),
+                    borderColor: "#4f46e5",
+                    backgroundColor: "rgba(79, 70, 229, 0.05)",
+                    fill: true,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    borderWidth: 2.5,
+                    tension: 0.1
+                },
+                {
+                    label: "Net Invested",
+                    data: evolutionChart.net_invested.map(p => ({ x: p.date, y: p.value })),
+                    borderColor: "#94a3b8",
+                    backgroundColor: "transparent",
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    borderWidth: 2,
+                    borderDash: [4, 4],
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            scales: {
+                x: {
+                    type: "time",
+                    time: { unit: "month" },
+                    min: "{{ chart_start }}",
+                    max: "{{ period_end }}",
+                    grid: { display: false }
+                },
+                y: { grid: gridConfig }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    align: 'end',
+                    labels: { boxWidth: 12, usePointStyle: true, font: { size: 11, weight: '500' } }
+                },
+                tooltip: defaultTooltip
+            },
+        },
+    });
+
+    // 3. % Growth Comparison Line Chart
+    const growthChart = {{ growth_chart | tojson }};
+    const trackedCurrencies = {{ currencies | tojson }};
+
+    const growthDatasets = [{
+        label: "Portfolio",
+        data: growthChart.portfolio.map(p => ({ x: p.date, y: p.value })),
+        borderColor: "#4f46e5",
+        backgroundColor: "#4f46e5",
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        borderWidth: 2.5,
+    }];
+
+    Object.entries(growthChart.benchmarks).forEach(([key, series], i) => {
+        const color = window.AppTheme.palette[i % window.AppTheme.palette.length];
+        const label = trackedCurrencies.includes(key) ? `${key}/{{ currency }}` : key;
+        growthDatasets.push({
+            label,
+            data: series.map(p => ({ x: p.date, y: p.value })),
+            borderColor: color,
+            backgroundColor: color,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            borderWidth: 1.75,
+        });
+    });
+
+    new Chart(document.getElementById("growthChart"), {
+        type: "line",
+        data: { datasets: growthDatasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            scales: {
+                x: {
+                    type: "time",
+                    time: { unit: "month" },
+                    min: "{{ chart_start }}",
+                    max: "{{ period_end }}",
+                    grid: { display: false }
+                },
+                y: {
+                    grid: gridConfig,
+                    ticks: { callback: (v) => `${v}%` }
+                },
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    align: 'end',
+                    labels: { boxWidth: 12, usePointStyle: true, font: { size: 11, weight: '500' } }
+                },
+                tooltip: {
+                    ...defaultTooltip,
+                    callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}%` }
+                },
+            },
+        },
+    });
+</script>
+{% endblock %}

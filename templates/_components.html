@@ -1,0 +1,130 @@
+{% macro kpi_card(label, value, caption, badge_text=None, badge_class="", caption_title=None, unit=None) %}
+<div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 hover:shadow-md transition-shadow">
+    <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">{{ label }}</span>
+        {% if badge_text %}
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ badge_class }}">
+            {{ badge_text }}
+        </span>
+        {% endif %}
+    </div>
+    <p class="text-3xl font-bold tracking-tight text-slate-900 tabular-nums">
+        {{ value }}{% if unit %} <span class="text-xs font-medium text-slate-400">{{ unit }}</span>{% endif %}
+    </p>
+    <p class="text-[11px] text-slate-400 mt-2"{% if caption_title %} title="{{ caption_title }}"{% endif %}>
+        {{ caption }}
+    </p>
+</div>
+{% endmacro %}
+
+{% macro card(title, subtitle=None) %}
+<section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 md:p-8">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-bold text-slate-900">{{ title }}</h2>
+            {% if subtitle %}<p class="text-xs text-slate-500">{{ subtitle }}</p>{% endif %}
+        </div>
+    </div>
+    {{ caller() }}
+</section>
+{% endmacro %}
+
+{% macro balance_table(title, balances) %}
+<section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 md:p-8">
+    <h2 class="text-lg font-bold text-slate-900 mb-4">{{ title }}</h2>
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-xs text-right divide-y divide-slate-100 tabular-nums">
+            <thead>
+                <tr class="text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+                    <th class="text-left py-3 pr-4 font-semibold">Account / Asset</th>
+                    <th class="pr-4 font-semibold">Qty</th>
+                    {% for c in currencies %}
+                    <th class="pl-4 font-semibold">{{ c }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for account in balances["accounts"] %}
+                <!-- Account Subtotal Row -->
+                <tr class="bg-slate-50/70 font-semibold text-slate-800">
+                    <td class="text-left py-2.5 pr-4 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                        {{ account.name }}
+                    </td>
+                    <td class="pr-4 text-slate-400">&mdash;</td>
+                    {% for c in currencies %}
+                    <td class="pl-4">{{ "{:,.2f}".format(account.subtotal[c]) }}</td>
+                    {% endfor %}
+                </tr>
+                <!-- Sub-asset Rows -->
+                {% for asset in account.assets %}
+                <tr class="hover:bg-slate-50/40 transition-colors">
+                    <td class="text-left py-2 pr-4 pl-6 text-slate-600 font-mono text-[11px]">{{ asset.symbol }}</td>
+                    <td class="pr-4 text-slate-500 font-mono text-[11px]">{{ "{:,.4f}".format(asset.quantity) }}</td>
+                    {% for c in currencies %}
+                    <td class="pl-4 text-slate-600">{{ "{:,.2f}".format(asset.amounts[c]) }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="border-t-2 border-slate-200 font-bold text-slate-900 bg-slate-50/50">
+                    <td class="text-left py-3 pr-4">Total</td>
+                    <td class="pr-4">&mdash;</td>
+                    {% for c in currencies %}
+                    <td class="pl-4">{{ "{:,.2f}".format(balances["totals"][c]) }}</td>
+                    {% endfor %}
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</section>
+{% endmacro %}
+
+{% macro hierarchy_table(tree) %}
+<div class="overflow-x-auto">
+    <table class="min-w-full text-xs text-right tabular-nums divide-y divide-slate-100">
+        <thead>
+            <tr class="text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+                <th class="text-left py-3 pr-4 font-semibold">Class / Sector / Holding</th>
+                <th class="px-3 py-3 font-semibold">Weight</th>
+                <th class="pl-3 py-3 font-semibold">Value</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+            {% for cls in tree["classes"] %}
+            <tr class="bg-slate-50/70 font-semibold text-slate-800">
+                <td class="text-left py-2.5 pr-4">{{ cls["label"] }}</td>
+                <td class="px-3 py-2.5">{{ "{:.1f}%".format(cls["weight_pct"]) }}</td>
+                <td class="pl-3 py-2.5">{{ "{:,.2f}".format(cls["value"]) }}</td>
+            </tr>
+            {% for sector in cls["sectors"] %}
+            {% set has_own_sector = sector["label"] != cls["label"] %}
+            {% if has_own_sector %}
+            <tr class="text-slate-700">
+                <td class="text-left py-2 pr-4 pl-6 font-medium">{{ sector["label"] }}</td>
+                <td class="px-3 py-2">{{ "{:.1f}%".format(sector["weight_pct"]) }}</td>
+                <td class="pl-3 py-2 text-slate-600">{{ "{:,.2f}".format(sector["value"]) }}</td>
+            </tr>
+            {% endif %}
+            {% for holding in sector["holdings"] %}
+            <tr class="hover:bg-slate-50/40 transition-colors {{ 'text-slate-400 italic' if holding['label'] == 'Others' else 'text-slate-600' }}">
+                <td class="text-left py-1.5 pr-4 {{ 'pl-10' if has_own_sector else 'pl-6' }} font-mono text-[11px]">{{ holding["label"] }}</td>
+                <td class="px-3 py-1.5 text-[11px]">{{ "{:.1f}%".format(holding["weight_pct"]) }}</td>
+                <td class="pl-3 py-1.5 text-[11px]">{{ "{:,.2f}".format(holding["value"]) }}</td>
+            </tr>
+            {% endfor %}
+            {% endfor %}
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="border-t-2 border-slate-200 font-bold text-slate-900 bg-slate-50/50">
+                <td class="text-left py-3 pr-4">Total</td>
+                <td class="px-3 py-3">{{ "{:.1f}%".format(tree["total"]["weight_pct"]) }}</td>
+                <td class="pl-3 py-3">{{ "{:,.2f}".format(tree["total"]["value"]) }}</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+{% endmacro %}

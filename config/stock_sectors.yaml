@@ -1,0 +1,215 @@
+# Sector classification per underlying equity symbol (GICS-style, approximate) - single source
+# of truth for both directly-held stocks and ETF look-through constituents, so a sector is never
+# defined twice. Symbols not listed here (e.g. an ETF like NOBL with no `etf_holdings_<symbol>.yaml` entry
+# of its own yet) fall back to "Unclassified" in the sector exposure chart rather than guessing.
+# The stock market is divided into 11 official sectors according to the Global Industry
+# Classification Standard (GICS).
+# - Communication Services: Telecom, media, entertainment, and interactive online services.
+# - Consumer Discretionary: Non-essential goods and services like apparel, autos, luxury items, and hotels.
+# - Consumer Staples: Everyday essentials like food, beverages, and household products.
+# - Energy: Oil, gas, consumable fuels, and renewable energy production.
+# - Financials: Banks, insurance, asset management, and financial exchange firms.
+# - Health Care: Pharmaceuticals, biotechnology, medical devices, and healthcare providers.
+# - Industrials: Aerospace, defense, machinery, manufacturing, and logistics.
+# - Information Technology: Software, hardware, semiconductors, and IT services.
+# - Materials: Chemicals, metal mining, forestry, and packaging products.
+# - Real Estate: Real estate investment trusts (REITs) and property management.
+# - Utilities: Electric, gas, and water service providers.
+- sector: "Communication Services"
+  symbols:
+    - CMCSA # Comcast Corp
+    - DIS # Walt Disney Co
+    - GOOG # Alphabet Inc (Class C)
+    - GOOGL # Alphabet Inc (Class A)
+    - META # Meta Platforms Inc
+    - NFLX # Netflix Inc
+    - SPCX # Space Exploration Technologies Corp (SpaceX)
+    - T # AT&T Inc
+    - TMUS # T-Mobile US Inc
+    - TTWO # Take-Two Interactive Software Inc
+    - VZ # Verizon Communications Inc
+    - WBD # Warner Bros Discovery Inc
+
+- sector: "Consumer Discretionary"
+  symbols:
+    - ABNB # Airbnb Inc
+    - AMZN # Amazon.com Inc
+    - BKNG # Booking Holdings Inc
+    - DASH # DoorDash Inc
+    - HD # Home Depot Inc
+    - MAR # Marriott International Inc
+    - MCD # McDonald's Corp
+    - MELI # MercadoLibre Inc
+    - ORLY # O'Reilly Automotive Inc
+    - PDD # PDD Holdings Inc
+    - ROST # Ross Stores Inc
+    - SBUX # Starbucks Corp
+    - TJX # TJX Cos Inc
+    - TSLA # Tesla Inc
+
+- sector: "Consumer Staples"
+  symbols:
+    - CCEP # Coca-Cola Europacific Partners PLC
+    - COST # Costco Wholesale Corp
+    - KDP # Keurig Dr Pepper Inc
+    - KO # Coca-Cola Co
+    - MDLZ # Mondelez International Inc
+    - MNST # Monster Beverage Corp
+    - PEP # PepsiCo Inc
+    - PG # Procter & Gamble Co
+    - PM # Philip Morris International Inc
+    - WMT # Walmart Inc
+
+- sector: "Energy"
+  symbols:
+    - BKR # Baker Hughes Co
+    - COP # ConocoPhillips
+    - CVX # Chevron Corp
+    - FANG # Diamondback Energy Inc
+    - XOM # ExxonMobil Corp
+
+- sector: "Financials"
+  symbols:
+    - AXP # American Express Co
+    - BAC # Bank of America Corp
+    - BLK # BlackRock Inc
+    - BRK-B # Berkshire Hathaway Inc
+    - C # Citigroup Inc
+    - CB # Chubb Ltd
+    - COF # Capital One Financial Corp
+    - GS # Goldman Sachs Group Inc
+    - JPM # JPMorgan Chase & Co
+    - MA # Mastercard Inc
+    - MS # Morgan Stanley
+    - PGR # Progressive Corp
+    - PYPL # PayPal Holdings Inc
+    - SCHW # Charles Schwab Corp
+    - SPGI # S&P Global Inc
+    - V # Visa Inc
+    - WFC # Wells Fargo & Co
+
+- sector: "Health Care"
+  symbols:
+    - ABBV # AbbVie Inc
+    - ABT # Abbott Laboratories
+    - ALNY # Alnylam Pharmaceuticals Inc
+    - AMGN # Amgen Inc
+    - BMY # Bristol-Myers Squibb Co
+    - CVS # CVS Health Corp
+    - DHR # Danaher Corp
+    - DXCM # Dexcom Inc
+    - GEHC # GE HealthCare Technologies Inc
+    - GILD # Gilead Sciences Inc
+    - IDXX # IDEXX Laboratories Inc
+    - ISRG # Intuitive Surgical Inc
+    - JNJ # Johnson & Johnson
+    - LLY # Eli Lilly & Co
+    - MRK # Merck & Co Inc
+    - OGI # OrganiGram Holdings Inc
+    - PFE # Pfizer Inc
+    - REGN # Regeneron Pharmaceuticals Inc
+    - TMO # Thermo Fisher Scientific Inc
+    - UNH # UnitedHealth Group Inc
+    - VRTX # Vertex Pharmaceuticals Inc
+
+- sector: "Industrials"
+  symbols:
+    - ADP # Automatic Data Processing Inc
+    - AXON # Axon Enterprise Inc
+    - BA # Boeing Co
+    - CAT # Caterpillar Inc
+    - CPRT # Copart Inc
+    - CSX # CSX Corp
+    - CTAS # Cintas Corp
+    - DE # Deere & Co
+    - ETN # Eaton Corp PLC
+    - FAST # Fastenal Co
+    - FER # Ferrovial SE
+    - GE # General Electric Co
+    - GEV # GE Vernova Inc
+    - HON # Honeywell International Inc
+    - HONA # Honeywell Aerospace Inc
+    - ODFL # Old Dominion Freight Line Inc
+    - PAYX # Paychex Inc
+    - PCAR # PACCAR Inc
+    - PH # Parker-Hannifin Corp
+    - RKLB # Rocket Lab Corp
+    - ROP # Roper Technologies Inc
+    - RTX # RTX Corp
+    - TRI # Thomson Reuters Corp
+    - UBER # Uber Technologies Inc
+    - UNP # Union Pacific Corp
+    - VRT # Vertiv Holdings Co
+
+- sector: "Materials"
+  symbols:
+    - LIN # Linde PLC
+    - NEM # Newmont Corp
+
+- sector: "Real Estate"
+  symbols:
+    - PLD # Prologis Inc
+    - WELL # Welltower Inc
+
+- sector: "Technology"
+  symbols:
+    - AAPL # Apple Inc
+    - ACN # Accenture PLC
+    - ADBE # Adobe Inc
+    - ADI # Analog Devices Inc
+    - ADSK # Autodesk Inc
+    - ALAB # Astera Labs Inc
+    - AMAT # Applied Materials Inc
+    - AMD # Advanced Micro Devices Inc
+    - ANET # Arista Networks Inc
+    - APH # Amphenol Corp
+    - APP # AppLovin Corp
+    - ARM # Arm Holdings PLC
+    - ASML # ASML Holding NV
+    - AVGO # Broadcom Inc
+    - CDNS # Cadence Design Systems Inc
+    - CRM # Salesforce Inc
+    - CRWD # Crowdstrike Holdings Inc
+    - CRWV # CoreWeave Inc
+    - CSCO # Cisco Systems Inc
+    - DDOG # Datadog Inc
+    - DELL # Dell Technologies Inc
+    - FTNT # Fortinet Inc
+    - GLW # Corning Inc
+    - IBM # International Business Machines Corp
+    - INTC # Intel Corp
+    - INTU # Intuit Inc
+    - KLAC # KLA Corp
+    - LITE # Lumentum Holdings Inc
+    - LRCX # Lam Research Corp
+    - MCHP # Microchip Technology Inc
+    - MPWR # Monolithic Power Systems Inc
+    - MRVL # Marvell Technology Inc
+    - MSFT # Microsoft Corp
+    - MSTR # Strategy Inc
+    - MU # Micron Technology Inc
+    - NBIS # Nebius Group NV
+    - NOW # ServiceNow Inc
+    - NVDA # NVIDIA Corp
+    - NXPI # NXP Semiconductors NV
+    - ORCL # Oracle Corp
+    - PANW # Palo Alto Networks Inc
+    - PLTR # Palantir Technologies Inc
+    - QCOM # QUALCOMM Inc
+    - SHOP # Shopify Inc
+    - SMCI # Super Micro Computer Inc
+    - SNDK # Sandisk Corp
+    - SNPS # Synopsys Inc
+    - STX # Seagate Technology Holdings PLC
+    - TER # Teradyne Inc
+    - TXN # Texas Instruments Inc
+    - WDAY # Workday Inc
+    - WDC # Western Digital Corp
+
+- sector: "Utilities"
+  symbols:
+    - AEP # American Electric Power Co Inc
+    - CEG # Constellation Energy Corp
+    - EXC # Exelon Corp
+    - NEE # NextEra Energy Inc
+    - XEL # Xcel Energy Inc

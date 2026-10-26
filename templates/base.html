@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Portfolio{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html { font-size: 16px; } /* Central font size enforcement */
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen p-6 md:p-10 antialiased">
+    <div class="max-w-6xl mx-auto space-y-8">
+        <!-- Common Header -->
+        <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-slate-900">{% block page_title %}{% endblock %}</h1>
+                <p class="text-sm text-slate-500 mt-0.5">{% block page_subtitle %}{% endblock %}</p>
+            </div>
+            <div class="flex items-center gap-3">
+                {% block header_actions %}
+                {% if currency_form_id %}
+                <div class="relative block">
+                    <select name="currency" form="{{ currency_form_id }}" onchange="this.form.submit()" class="appearance-none bg-white border border-slate-300 rounded-lg pl-3 pr-8 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition shadow-sm cursor-pointer">
+                        {% for c in currencies %}
+                        <option value="{{ c }}" {{ "selected" if currency == c else "" }}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</span>
+                </div>
+                {% else %}
+                <form method="get" class="inline-flex">
+                    <label class="relative block">
+                        <select name="currency" onchange="this.form.submit()" class="appearance-none bg-white border border-slate-300 rounded-lg pl-3 pr-8 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition shadow-sm cursor-pointer">
+                            {% for c in currencies %}
+                            <option value="{{ c }}" {{ "selected" if currency == c else "" }}>{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                        <span class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</span>
+                    </label>
+                </form>
+                {% endif %}
+                {% endblock %}
+                <div class="h-4 w-px bg-slate-200"></div>
+                <nav class="flex items-center gap-2">
+                    <a href="/" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg transition {{ 'text-indigo-600 bg-indigo-50' if request.url.path == '/' else 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">Overview</a>
+                    <a href="/performance" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg transition {{ 'text-indigo-600 bg-indigo-50' if request.url.path == '/performance' else 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">Performance</a>
+                    <a href="/exposure" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg transition {{ 'text-indigo-600 bg-indigo-50' if request.url.path == '/exposure' else 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">Exposure</a>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Page Specific Content -->
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Central Theme & Palette Configuration -->
+    <script>
+        window.AppTheme = {
+            palette: [
+                '#3b82f6', // 0: Blue
+                '#10b981', // 1: Emerald
+                '#f59e0b', // 2: Amber
+                '#8b5cf6', // 3: Purple
+                '#f43f5e', // 4: Rose
+                '#06b6d4', // 5: Cyan
+                '#ec4899', // 6: Pink
+                '#14b8a6', // 7: Teal
+                '#6366f1', // 8: Indigo
+                '#64748b'  // 9: Slate / Muted
+            ],
+            tooltipDefaults: {
+                backgroundColor: '#0f172a',
+                titleFont: { size: 13, weight: '600' },
+                bodyFont: { size: 13 },
+                padding: 10,
+                cornerRadius: 8
+            },
+            gridConfig: {
+                color: 'rgba(226, 232, 240, 0.6)',
+                drawBorder: false
+            }
+        };
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

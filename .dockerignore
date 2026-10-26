@@ -1,0 +1,11 @@
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.git
+.gitignore
+.env
+.env.*
+*.md
+TODOs.txt

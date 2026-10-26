@@ -1,0 +1,123 @@
+# ==============================================================================
+# 1. Secrets & Environment Variables (NEVER COMMIT)
+# ==============================================================================
+# .env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pub
+
+# ==============================================================================
+# 2. Financial & Personal Data Sources
+# ==============================================================================
+# Ignore root data folder if used (except templates)
+data_sources/*.xlsx
+data_sources/*.xls
+data_sources/*.pdf
+data_sources/*.csv
+data_sources/*.yaml
+!data_sources/template_schwab.csv
+!data_sources/template_manual.yaml
+
+# ==============================================================================
+# 3. Python & Virtual Environments
+# ==============================================================================
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized files
+__pycache__/
+*__pycache__*
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / Packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller / Testing / Coverage
+*.manifest
+*.spec
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints
+
+# ==============================================================================
+# 4. Database & Docker Local Artifacts
+# ==============================================================================
+*.sqlite3
+*.db
+# Local Docker volume mounts if placed inside project dir
+postgres_data/
+docker_data/
+
+# Local dev artifacts (e.g. services/portfolio/test_templates.py's rendered output)
+test_output/
+
+# ==============================================================================
+# 5. OS & IDE Metadata
+# ==============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# VS Code / JetBrains IDEs
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# ==============================================================================
+# 6. Logs & Runtime Dumps
+# ==============================================================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

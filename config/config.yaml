@@ -1,0 +1,54 @@
+portfolio:
+  name: "Master Portfolio"
+  history_start_date: 2021-01-01
+  tracked_currencies:
+    - "USD"
+    - "EUR"
+    - "BRL"
+
+data_sources:
+  yaml_sources:
+    - "data_sources/template_manual.yaml"
+  schwab_csv: "data_sources/template_schwab.csv"
+  bmw_pension_pdfs:
+    - "data_sources/bmw_pension/pvk.pdf"
+    - "data_sources/bmw_pension/ak.pdf"
+    - "data_sources/bmw_pension/zv.pdf"
+
+# Add here assets which were renamed through time (e.g. FB ticker became META)
+symbol_aliases:
+  FB: "META"
+
+# Maps each Tesouro Direto asset symbol to the (tipo_titulo, vencimento) pair the Tesouro
+# Transparente CKAN dataset keys its price history by - the B3 export's "Produto" column only
+# gives the maturity year, not the exact date the dataset needs.
+tesouro_direto:
+  titles:
+    TESOURO_IPCA_2045:
+      tipo: "Tesouro IPCA+"
+      vencimento: "15/05/2045"
+    TESOURO_PREFIXADO_2029:
+      tipo: "Tesouro Prefixado"
+      vencimento: "01/01/2029"
+
+analytics:
+  xirr_default_guess: 0.10
+  precision_decimals: 2
+
+# External indices trackable as evolution-graph benchmarks (in addition to FX pairs and any
+# portfolio asset, which need no config). Add a line here to track another one - it's fetched
+# the same way as any other liquid asset, just never gets a transaction, so it never shows up
+# in net worth/allocation.
+benchmarks:
+  SP500:
+    ticker: "^GSPC"
+    label: "S&P 500"
+    currency: "USD"
+  DAX:
+    ticker: "^GDAXI"
+    label: "DAX"
+    currency: "EUR"
+  IBOV:
+    ticker: "^BVSP"
+    label: "Ibovespa"
+    currency: "BRL"

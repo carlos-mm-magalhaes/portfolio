@@ -1,0 +1,27 @@
+account:
+  name: "Physical Assets"
+  account_type: "physical"
+
+assets:
+  - symbol: "LOTE_BR" # Terreno Sebastiao Laranjeiras
+    asset_class: "real_estate"
+    currency: "BRL"
+    is_liquid: false
+
+    transactions:
+      - date: "2023-06-05"
+        type: "BUY"
+        amount: 180000.00
+        quantity: 1.0
+        currency: "BRL"
+        notes: "Acquisition of parcel (deed + notary)"
+
+      - date: "2025-12-15"
+        type: "FEE"            # Capex (increases cost basis)
+        amount: 1500.00
+        currency: "BRL"
+        notes: "Topography survey, perimeter fencing & clearing"
+
+    valuations:                # Recorded in asset_prices
+      - date: "2026-08-25"
+        price: 200000.00       # Current conservative appraisal

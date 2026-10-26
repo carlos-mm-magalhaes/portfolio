@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% from "_components.html" import kpi_card, card, hierarchy_table %}
+
+{% block title %}Portfolio Exposure{% endblock %}
+{% block page_title %}Portfolio Exposure{% endblock %}
+{% block page_subtitle %}Look-through exposure metrics, concentration, and sector breakdown{% endblock %}
+
+{% block content %}
+<section class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+    {% set hhi = concentration["hhi"] %}
+    {{ kpi_card(
+        label="Concentration Index",
+        value="{:.3f}".format(hhi),
+        unit="HHI",
+        badge_text="Diversified" if hhi < 0.15 else ("Moderate" if hhi <= 0.25 else "Concentrated"),
+        badge_class="bg-emerald-50 text-emerald-700" if hhi < 0.15 else ("bg-amber-50 text-amber-700" if hhi <= 0.25 else "bg-rose-50 text-rose-700"),
+        caption="<0.15 diversified · 0.15–0.25 moderate · >0.25 concentrated"
+    ) }}
+    {{ kpi_card(
+        label="Illiquid Share",
+        value="{:,.2f}".format(illiquid_exposure["illiquid_value"]),
+        unit=currency,
+        badge_text="{:.1f}%".format(illiquid_exposure["illiquid_pct"]),
+        badge_class="bg-slate-100 text-slate-700",
+        caption="Liquid capital: " ~ "{:,.2f}".format(illiquid_exposure["liquid_value"]) ~ " " ~ currency
+    ) }}
+</section>
+
+{% call card("Portfolio Composition", "Class \u2192 Sector \u2192 Holding look-through breakdown, top " ~ 5 ~ " per sector (" ~ currency ~ ")") %}
+{{ hierarchy_table(holdings_tree) }}
+<div class="mt-6 pt-4 border-t border-slate-100 flex items-start gap-2 text-slate-400 text-xs leading-relaxed">
+    <span class="text-slate-400 select-none">ⓘ</span>
+    <p>
+        ETF holdings are blended into their underlying constituents using snapshot data. "Unmapped" accounts for untracked ETF weight, and "Unclassified" marks individual equities without industry tags.
+    </p>
+</div>
+{% endcall %}
+
+{% call card("Currency Exposure", "Breakdown by underlying currency of valuation (" ~ currency ~ ")") %}
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+    <!-- Doughnut Canvas -->
+    <div class="lg:col-span-5 relative flex items-center justify-center">
+        <div class="relative w-64 h-64 md:w-72 md:h-72">
+            <canvas id="currencyChart"></canvas>
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Currencies</span>
+                <span class="text-2xl font-bold text-slate-900 tabular-nums">{{ currency_exposure | length }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="lg:col-span-7 overflow-x-auto">
+        <table class="min-w-full text-xs text-right divide-y divide-slate-100 tabular-nums">
+            <thead>
+                <tr class="text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+                    <th class="text-left py-3 pr-4 font-semibold">Native Currency</th>
+                    <th class="px-3 py-3 font-semibold">Weight</th>
+                    <th class="pl-3 py-3 font-semibold">{{ currency }} Value</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for row in currency_exposure %}
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="text-left py-3 pr-4 font-medium text-slate-800 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full inline-block currency-dot" data-index="{{ loop.index0 }}"></span>
+                        <span class="font-bold text-slate-900">{{ row["label"] }}</span>
+                    </td>
+                    <td class="px-3 py-3 font-semibold text-slate-700">{{ "{:.1f}%".format(row["weight_pct"]) }}</td>
+                    <td class="pl-3 py-3 text-slate-600">{{ "{:,.2f}".format(row["value"]) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endcall %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Currency Chart
+    const currencyExposure = {{ currency_exposure | tojson }};
+    document.querySelectorAll('.currency-dot').forEach(el => {
+        const idx = parseInt(el.getAttribute('data-index'), 10);
+        el.style.backgroundColor = window.AppTheme.palette[idx % window.AppTheme.palette.length];
+    });
+
+    new Chart(document.getElementById("currencyChart"), {
+        type: "doughnut",
+        data: {
+            labels: currencyExposure.map(r => r.label),
+            datasets: [{
+                data: currencyExposure.map(r => r.weight_pct),
+                backgroundColor: window.AppTheme.palette.slice(0, currencyExposure.length),
+                borderWidth: 2,
+                borderColor: '#ffffff',
+                hoverOffset: 6
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '72%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    ...window.AppTheme.tooltipDefaults,
+                    callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed.toFixed(1)}%` }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
