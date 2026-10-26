@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY . .
 
-# Matches bitcoind's UID=1000/GID=1000 so bind-mounted host files stay writable
+# UID 1000 matches the default first user on most Linux hosts, so bind-mounted files stay readable
 RUN useradd --uid 1000 --create-home appuser && chown -R appuser:appuser /app
 USER appuser
 

@@ -1,0 +1,55 @@
+x-app: &app
+  build: .
+  environment: &app-env
+    POSTGRES_DB: ${POSTGRES_DB:-portfolio_db}
+    POSTGRES_USER: ${POSTGRES_USER:-portfolio_app}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-portfolio_app}
+    DB_HOST: postgres
+    DB_PORT: "5432"
+  volumes:
+    # Edit config/data without rebuilding the image
+    - ./config:/app/config:ro
+    - ./data_sources:/app/data_sources:ro
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-portfolio_db}
+      POSTGRES_USER: ${POSTGRES_USER:-portfolio_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-portfolio_app}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Only runs on first start, i.e. while the pgdata volume is still empty
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  web:
+    <<: *app
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  cron:
+    <<: *app
+    command: ["python", "src/portfolio_cron.py"]
+    environment:
+      <<: *app-env
+      RUN_ON_STARTUP: "true"
+    restart: unless-stopped
+
+volumes:
+  pgdata:

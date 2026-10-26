@@ -25,18 +25,30 @@ def _safe(label: str, fn):
         print(f"[ERROR] {label} failed: {e}")
 
 
+def _sync_file(label: str, provider_cls, conn, path):
+    """Runs a file-based provider only if its source file is configured and present."""
+    if not path or not os.path.isfile(path):
+        print(f"[SKIP] {label}: source file not configured or missing ({path})")
+        return
+    _safe(label, provider_cls(conn, path).sync)
+
+
 def run_update():
     """One full ingestion pass: transactions, market data/FX, then daily snapshots."""
     conn = psycopg2.connect(**cfg.get_db_connection_params())
 
     print("=== Ingesting Transaction Data ===")
     for yaml_path in cfg.YAML_SOURCES:
-        _safe(f"YamlProvider({yaml_path})", YamlProvider(conn, yaml_path).sync)
-    _safe("SchwabProvider", SchwabProvider(conn, cfg.SCHWAB_CSV_PATH).sync)
-    _safe("NexoProvider", NexoProvider(conn, cfg.NEXO_CSV_PATH).sync)
-    _safe("SparrowProvider", SparrowProvider(conn, cfg.SPARROW_CSV_PATH).sync)
-    _safe("BmwPensionProvider", BmwPensionProvider(conn, cfg.BMW_PENSION_PDF_PATHS).sync)
-    _safe("TesouroDiretoProvider", TesouroDiretoProvider(conn, cfg.TESOURO_DIRETO_XLSX_PATH).sync)
+        _sync_file(f"YamlProvider({yaml_path})", YamlProvider, conn, yaml_path)
+    _sync_file("SchwabProvider", SchwabProvider, conn, cfg.SCHWAB_CSV_PATH)
+    _sync_file("NexoProvider", NexoProvider, conn, cfg.NEXO_CSV_PATH)
+    _sync_file("SparrowProvider", SparrowProvider, conn, cfg.SPARROW_CSV_PATH)
+    pension_pdfs = [p for p in cfg.BMW_PENSION_PDF_PATHS if os.path.isfile(p)]
+    if pension_pdfs:
+        _safe("BmwPensionProvider", BmwPensionProvider(conn, pension_pdfs).sync)
+    else:
+        print("[SKIP] BmwPensionProvider: no PDFs found")
+    _sync_file("TesouroDiretoProvider", TesouroDiretoProvider, conn, cfg.TESOURO_DIRETO_XLSX_PATH)
 
     print("=== Ingesting Asset Infos (e.g. Prices, Splits, FX) ===")
     yahoo_svc = YahooMarketData(conn)
@@ -51,8 +63,8 @@ def run_update():
     # get_price_at) now that this pass's market data is available - both are idempotent
     # (delete-then-reinsert), so this just recomputes those legs from the freshest price
     # instead of relying on next run's data (matters most on a from-scratch DB's first run).
-    _safe("SparrowProvider (re-sync)", SparrowProvider(conn, cfg.SPARROW_CSV_PATH).sync)
-    _safe("TesouroDiretoProvider (re-sync)", TesouroDiretoProvider(conn, cfg.TESOURO_DIRETO_XLSX_PATH).sync)
+    _sync_file("SparrowProvider (re-sync)", SparrowProvider, conn, cfg.SPARROW_CSV_PATH)
+    _sync_file("TesouroDiretoProvider (re-sync)", TesouroDiretoProvider, conn, cfg.TESOURO_DIRETO_XLSX_PATH)
 
     print("=== Generating Snapshots ===")
     _safe("generate_daily_snapshots", SnapshotService(conn).generate_daily_snapshots)

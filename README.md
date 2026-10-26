@@ -335,20 +335,40 @@ Practical takeaways:
   simulated position negative, producing a nonsensical result. May revisit with a
   proportional/ratio-based withdrawal simulation in the future.
 
-## Setup / Comands for Reproduction
+## Setup / Commands for Reproduction
+
+Put your own exports in `data_sources/` and reference them in `config/config.yaml` first (see
+`data_sources/README.md`). Sources left out of the config or missing on disk are skipped. Then pick one option:
+
+### Option A: Docker Compose
+
+Starts Postgres (schema loaded on first start), the dashboard and the daily 02:00 cron
+(also runs once at startup). Optionally copy `.env.example` to `.env` to change the DB credentials.
+
 ```bash
-cd ~/homelab
+docker compose up -d --build
+# Dashboard: http://localhost:8000
+docker compose logs -f cron
 
+# After changing data_sources/ or config/: re-ingest without waiting for 02:00
+docker compose exec cron python src/portfolio_cron.py --once
+
+# Reset the database (also re-applies schema.sql)
+docker compose down -v
+```
+
+### Option B: Local CLI
+
+```bash
+# Requires Python 3.12+ and a reachable PostgreSQL server.
+# Create the role/database first (e.g. psql as superuser, or pgAdmin), then:
 psql -U portfolio_app -h localhost -c "CREATE DATABASE portfolio_db;"
-# or create with pg admin tool and set user as owner
 
-# Docker
-docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < services/portfolio/schema.sql
+# Credentials/host: copy .env.example to .env and adjust (defaults in src/config.py)
+cp .env.example .env
 
-# Local
-psql -U portfolio_app -h localhost -d portfolio_db -f services/portfolio/schema.sql
+psql -U portfolio_app -h localhost -d portfolio_db -f schema.sql
 
-cd ~/homelab/services/portfolio
 python3 -m venv .venv
 #win: python -m venv .venv
 source .venv/bin/activate

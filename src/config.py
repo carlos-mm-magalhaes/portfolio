@@ -54,18 +54,15 @@ class Config:
 
         # File paths
         self.YAML_SOURCES = [str(BASE_DIR / p) for p in self._raw["data_sources"].get("yaml_sources", [])]
-        self.SCHWAB_CSV_PATH = str(BASE_DIR / self._raw["data_sources"]["schwab_csv"])
-        self.NEXO_CSV_PATH = str(BASE_DIR / self._raw["data_sources"]["nexo_csv"])
-        self.SPARROW_CSV_PATH = str(BASE_DIR / self._raw["data_sources"]["sparrow_csv"])
-        self.BMW_PENSION_PDF_PATHS = [str(BASE_DIR / p) for p in self._raw["data_sources"].get("bmw_pension_pdfs", [])]
-        self.TESOURO_DIRETO_XLSX_PATH = str(BASE_DIR / self._raw["data_sources"]["tesouro_direto_xlsx"])
-
-        # Bitcoin Core RPC (bitcoind) - host defaults to localhost for local/venv runs; the
-        # bitcoind container hostname is injected via BTC_RPC_HOST in docker-compose.yml.
-        self.BTC_RPC_HOST = os.getenv("BTC_RPC_HOST", "127.0.0.1")
-        self.BTC_RPC_PORT = os.getenv("BTC_RPC_PORT", "8332")
-        self.BTC_RPC_URL = f"http://{self.BTC_RPC_HOST}:{self.BTC_RPC_PORT}"
-        self.BTC_WALLET_NAME = self._raw.get("bitcoin_rpc", {}).get("wallet_name")
+        # Every source is optional; a key left out of config.yaml (None) is skipped by the cron.
+        sources = self._raw.get("data_sources", {})
+        def _path(key):
+            return str(BASE_DIR / sources[key]) if sources.get(key) else None
+        self.SCHWAB_CSV_PATH = _path("schwab_csv")
+        self.NEXO_CSV_PATH = _path("nexo_csv")
+        self.SPARROW_CSV_PATH = _path("sparrow_csv")
+        self.BMW_PENSION_PDF_PATHS = [str(BASE_DIR / p) for p in sources.get("bmw_pension_pdfs", [])]
+        self.TESOURO_DIRETO_XLSX_PATH = _path("tesouro_direto_xlsx")
 
         # Mappings & Analytics
         self.SYMBOL_ALIASES = self._raw.get("symbol_aliases", {})
